@@ -26,3 +26,4 @@ spec/test_directory_elec
 
 Gemfile.lock
 .rubocop*
+example_files
