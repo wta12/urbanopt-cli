@@ -11,7 +11,7 @@ gemspec
 # Note that if allow_local is true, but the gem is not found locally, then it will
 # checkout the latest version (develop) from github.
 allow_local = ENV['FAVOR_LOCAL_GEMS']
-
+uo_gems_local = ENV['UO_DEV']
 # Uncomment (and modify path/branch) if you need to test local development versions. Otherwise
 # these are included in the gemspec file
 #
@@ -33,23 +33,6 @@ allow_local = ENV['FAVOR_LOCAL_GEMS']
 #  gem 'openstudio-model-articulation', github: 'NREL/openstudio-model-articulation-gem', branch: 'develop'
 # end
 
-# if allow_local && File.exist?('../urbanopt-scenario-gem')
-#  gem 'urbanopt-scenario', path: '../urbanopt-scenario-gem'
-# elsif allow_local
-  #  gem 'urbanopt-scenario', github: 'URBANopt/urbanopt-scenario-gem', branch: 'develop'
-# end
-
-# if allow_local && File.exist?('../urbanopt-geojson-gem')
-#   gem 'urbanopt-geojson', path: '../urbanopt-geojson-gem'
-# elsif allow_local
-#   gem 'urbanopt-geojson', github: 'URBANopt/urbanopt-geojson-gem', branch: 'develop'
-# end
-
-# if allow_local && File.exist?('../urbanopt-reopt-gem')
-#   gem 'urbanopt-reopt', path: '../urbanopt-reopt-gem'
-# elsif allow_local
-#   gem 'urbanopt-reopt', github: 'URBANopt/urbanopt-reopt-gem', branch: 'develop'
-# end
 
 # if allow_local && File.exist?('../openstudio-load-flexibility-measures')
 #   gem 'openstudio-load-flexibility-measures', path: '../openstudio-load-flexibility-measures'
@@ -57,8 +40,28 @@ allow_local = ENV['FAVOR_LOCAL_GEMS']
 #   gem 'openstudio-load-flexibility-measures', github: 'NREL/openstudio-load-flexibility-measures-gem', branch: 'develop'
 # end
 
-# if allow_local && File.exist?('../urbanopt-reporting-gem')
-  # gem 'urbanopt-reporting', path: '../urbanopt-reporting-gem'
-# elsif allow_local
-  # gem 'urbanopt-reporting', github: 'URBANopt/urbanopt-reporting-gem', branch: 'develop'
-# end
+
+if uo_gems_local && File.exist?('../urbanopt-scenario-gem')
+ gem 'urbanopt-scenario', path: '../urbanopt-scenario-gem'
+elsif uo_gems_local
+   gem 'urbanopt-scenario', github: 'URBANopt/urbanopt-scenario-gem', branch: 'develop'
+end
+
+if uo_gems_local && File.exist?('../urbanopt-geojson-gem')
+  gem 'urbanopt-geojson', path: '../urbanopt-geojson-gem'
+elsif uo_gems_local
+  gem 'urbanopt-geojson', github: 'URBANopt/urbanopt-geojson-gem', branch: 'develop'
+end
+
+if uo_gems_local && File.exist?('../urbanopt-reopt-gem')
+  gem 'urbanopt-reopt', path: '../urbanopt-reopt-gem'
+elsif uo_gems_local
+  gem 'urbanopt-reopt', github: 'URBANopt/urbanopt-reopt-gem', branch: 'develop'
+end
+
+
+if uo_gems_local && File.exist?('../urbanopt-reporting-gem')
+  gem 'urbanopt-reporting', path: '../urbanopt-reporting-gem'
+elsif uo_gems_local
+  gem 'urbanopt-reporting', github: 'URBANopt/urbanopt-reporting-gem', branch: 'develop'
+end
