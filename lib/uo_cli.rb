@@ -729,7 +729,7 @@ module URBANopt
     end
 
     if @opthash.command == 'opendss'
-
+      
       # first check python
       res = check_python
       if res[:python] == false
@@ -757,10 +757,14 @@ module URBANopt
         run_dir = File.join(@root_dir, 'run', @scenario_name.downcase)
         featurefile = File.join(@root_dir, @feature_name)
       end
-
+      
+     
+     
+      
       # Ensure building simulations have been run already
       begin
         feature_list = Pathname.new(File.expand_path(run_dir)).children.select(&:directory?)
+        feature_list = feature_list.select {|x| File.exists?(File.expand_path(File.join(x,'eplusout.sql')))}
         some_random_feature = File.basename(feature_list[0])
         if !File.exist?(File.expand_path(File.join(run_dir, some_random_feature, 'eplusout.sql')))
           abort("ERROR: URBANopt simulations are required before using opendss. Please run and process simulations, then try again.\n")
@@ -772,6 +776,7 @@ module URBANopt
       # We're calling the python cli that gets installed when the user installs ditto-reader.
       # If ditto-reader is installed into a venv (recommended), that venv must be activated when this command is called.
       ditto_cli_root = "ditto_reader_cli run-opendss "
+     
       if @opthash.subopts[:config]
         ditto_cli_addition = "--config #{@opthash.subopts[:config]}"
       elsif @opthash.subopts[:scenario] && @opthash.subopts[:feature]
@@ -794,7 +799,10 @@ module URBANopt
       else
         abort("\nCommand must include ScenarioFile & FeatureFile, or a config file that specifies both. Please try again")
       end
+     
       begin
+        puts ditto_cli_root + ditto_cli_addition
+        
         system(ditto_cli_root + ditto_cli_addition)
       rescue FileNotFoundError
         abort("\nMust post-process results before running opendss. We recommend 'process --default'." \
@@ -849,9 +857,11 @@ module URBANopt
         end
         puts "\nRunning the REopt Scenario post-processor with scenario assumptions file: #{scenario_assumptions}\n"
         reopt_post_processor = URBANopt::REopt::REoptPostProcessor.new(scenario_report, scenario_assumptions, scenario_base.reopt_feature_assumptions, DEVELOPER_NREL_KEY)
+    
         if @opthash.subopts[:reopt_scenario] == true
           puts "\nPost-processing entire scenario with REopt\n"
           scenario_report_scenario = reopt_post_processor.run_scenario_report(scenario_report: scenario_report, save_name: 'scenario_optimization')
+         
           results << { "process_type": 'reopt_scenario', "status": 'Complete', "timestamp": Time.now.strftime('%Y-%m-%dT%k:%M:%S.%L') }
           puts "\nDone\n"
         elsif @opthash.subopts[:reopt_feature] == true
