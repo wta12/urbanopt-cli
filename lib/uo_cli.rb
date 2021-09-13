@@ -228,6 +228,9 @@ module URBANopt
           opt :scenario, "\nSelect which scenario to optimize", default: 'baseline_scenario.csv', required: true, short: :s
 
           opt :feature, "\nSelect which FeatureFile to use", default: 'example_project.json', required: true, short: :f
+
+          opt :run_opts, "\nPath to options.json for customized scenario and feature report\n" \
+          "Example: uo process --default --run-opts path/to/options.json", type: String
         end
       end
 
@@ -346,14 +349,16 @@ module URBANopt
 
     # Simulate energy usage as defined by ScenarioCSV\
     def self.run_func
+      
+      
       run_dir = File.join(@root_dir, 'run', @scenario_name.downcase)
       csv_file = File.join(@root_dir, @scenario_file_name)
       featurefile = File.join(@root_dir, @feature_name)
       mapper_files_dir = File.join(@root_dir, 'mappers')
       reopt_files_dir = File.join(@root_dir, 'reopt/')
       num_header_rows = 1
-
-      if @feature_id
+      
+      if @feature_id ## @feature_id nil for process only
         feature_run_dir = File.join(run_dir, @feature_id)
         # If run folder for feature exists, remove it
         FileUtils.rm_rf(feature_run_dir) if File.exist?(feature_run_dir)
@@ -370,7 +375,43 @@ module URBANopt
       end
       scenario_output
     end
+# Simulate energy usage as defined by ScenarioCSV with options
+def self.run_func_opt(options={})
+    if options == {}
+      return run_func
+    end
+  default_options = {
+    :run_dir => File.join(@root_dir, 'run', @scenario_name.downcase),
+    :csv_file => File.join(@root_dir, @scenario_file_name),
+    :featurefile => File.join(@root_dir, @feature_name),
+    :mapper_files_dir => File.join(@root_dir, 'mappers'),
+    :reopt_files_dir => File.join(@root_dir, 'reopt/'),
+    :num_header_rows => 1,
+    :scenario_name => @scenario_name.downcase,
+    :root_dir => @root_dir,
+  } 
+  applied_options = default_options.merge(options)
+  run_dir = applied_options[:run_dir]
+  csv_file = applied_options[:csv_file]
+  featurefile = applied_options[:featurefile]
+  mapper_files_dir = applied_options[:mapper_files_dir]
+  reopt_files_dir = applied_options[:reopt_files_dir]
+  num_header_rows = applied_options[:num_header_rows]
+  root_dir = applied_options[:root_dir]
+  scenario_name = applied_options[:scenario_name]
+  
 
+  feature_file = URBANopt::GeoJSON::GeoFile.from_file(featurefile)
+  if @opthash.subopts[:reopt] == true || @opthash.subopts[:reopt_scenario] == true || @opthash.subopts[:reopt_feature] == true
+    # TODO: Better way of grabbing assumptions file than the first file in the folder
+    reopt_files_dir_contents_list = Dir.children(reopt_files_dir.to_s)
+    reopt_assumptions_filename = File.basename(reopt_files_dir_contents_list[0])
+    scenario_output = URBANopt::Scenario::REoptScenarioCSV.new(scenario_name, root_dir , run_dir, feature_file, mapper_files_dir, csv_file, num_header_rows, reopt_files_dir, reopt_assumptions_filename)
+  else
+    scenario_output = URBANopt::Scenario::ScenarioCSV.new(scenario_name,root_dir, run_dir, feature_file, mapper_files_dir, csv_file, num_header_rows)
+  end
+  scenario_output
+end## run_func_with_options
     # Create a scenario csv file from a FeatureFile
     # params\
     # +feature_file_path+:: _string_ Path to a FeatureFile
@@ -815,18 +856,70 @@ module URBANopt
       if @opthash.subopts[:default] == false && @opthash.subopts[:opendss] == false && @opthash.subopts[:reopt_scenario] == false && @opthash.subopts[:reopt_feature] == false
         abort("\nERROR: No valid process type entered. Must enter a valid process type\n")
       end
-
+      opt_runs = nil
+      if @opthash.subopts[:run_opts]
+       if File.exist?(@opthash.subopts[:run_opts])
+          opt_runs = JSON.parse(File.read(@opthash.subopts[:run_opts]),:symbolize_names => true)
+        end
+      end
+      run_func_opts = {}
+      scenario_opts = {
+      :name => "default_scenario_report",
+      :skip_feature_reports => false,
+      
+     }
+     output_opts ={
+      :process_file_path => File.join(@root_dir, 'run', @scenario_name.downcase, 'process_status.json')
+     }
+      
+      run_func_opts.merge!(opt_runs[:run_func]) if opt_runs[:run_func]
+      scenario_opts.merge!(opt_runs[:scenario]) if opt_runs[:scenario]
+      output_opts.merge!(opt_runs[:output]) if opt_runs[:output]
+      
+       
+      
+      
       puts 'Post-processing URBANopt results'
-
+      
       # delete process_status.json
-      process_filename = File.join(@root_dir, 'run', @scenario_name.downcase, 'process_status.json')
+      process_filename = output_opts[:process_file_path]
       FileUtils.rm_rf(process_filename) if File.exist?(process_filename)
       results = []
+      # puts run_func.csv_file
+      # puts run_func.mapper_files_dir
+      # puts run_func.num_header_rows
+      # :run_dir => File.join(@root_dir, 'run', @scenario_name.downcase),
+      # :csv_file => File.join(@root_dir, @scenario_file_name),
+      # :featurefile => File.join(@root_dir, @feature_name),
+      # :mapper_files_dir => File.join(@root_dir, 'mappers'),
+      # :reopt_files_dir => File.join(@root_dir, 'reopt/'),
+      # :num_header_rows => 1,
+      # :scenario_name => @scenario_name.downcase,
+      # :root_dir => @root_dir,
+      # run_func_opts = {
+      #   :scenario_name =>  "PostDefault_UES_Baseline_Test",
+      #   :root_dir =>  "/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Docker_test",
+      #   :run_dir =>  "/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Docker_test/run_result/run_folders/ues_baseline",
+      #   :featurefile =>  "/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Docker_test/run_result/run_folders/ues_baseline/UES_Baseline_copied.json",
+      #   :mapper_files_dir =>  "/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Docker_test/mappers",
+      #   :csv_file =>  "/Users/kcu/Desktop/Scripting/NREL_Work/UCI/Github/UrbanOpt_NREL_UCI/Docker_test/run_result/customized_reports/scenario_reports/UES_Baseline_Test/UES_Baseline_Test_reported_scenario.csv",
+      #   :num_header_rows =>  1
+         
+      # }
+      # scenario_opts = {
+      #   :scenario_name => "PostDefault_UES_Baseline_Test",
+      #   :skip_feature_reports => true 
+      # }
 
-      default_post_processor = URBANopt::Scenario::ScenarioDefaultPostProcessor.new(run_func)
+   
+      # default_post_processor = URBANopt::Scenario::ScenarioDefaultPostProcessor.new(run_func)
+      default_post_processor = URBANopt::Scenario::ScenarioDefaultPostProcessor.new(run_func_opt(run_func_opts ))
+
       scenario_report = default_post_processor.run
-      scenario_report.save(file_name = 'default_scenario_report', save_feature_reports = false)
-      scenario_report.feature_reports.each(&:save)
+      scenario_report.directory_name = scenario_opts[:directory_name] if scenario_opts[:directory_name]
+      scenario_report.save(file_name = scenario_opts[:name], save_feature_reports = false)
+      
+      scenario_report.feature_reports.each(&:save) unless scenario_opts[:skip_feature_reports]
 
       if @opthash.subopts[:with_database] == true
         default_post_processor.create_scenario_db_file
