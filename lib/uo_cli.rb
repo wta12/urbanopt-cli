@@ -871,11 +871,11 @@ end## run_func_with_options
      output_opts ={
       :process_file_path => File.join(@root_dir, 'run', @scenario_name.downcase, 'process_status.json')
      }
-      
-      run_func_opts.merge!(opt_runs[:run_func]) if opt_runs[:run_func]
-      scenario_opts.merge!(opt_runs[:scenario]) if opt_runs[:scenario]
-      output_opts.merge!(opt_runs[:output]) if opt_runs[:output]
-      
+      if opt_runs
+        run_func_opts.merge!(opt_runs[:run_func]) if opt_runs[:run_func]
+        scenario_opts.merge!(opt_runs[:scenario]) if opt_runs[:scenario]
+        output_opts.merge!(opt_runs[:output]) if opt_runs[:output]
+      end
        
       
       
